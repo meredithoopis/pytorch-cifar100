@@ -1,17 +1,9 @@
-# train.py
-#!/usr/bin/env	python3
-
-""" train network using pytorch
-
-author baiyu
-"""
-
 import os
 import sys
 import argparse
 import time
 from datetime import datetime
-
+from tqdm import tqdm 
 import numpy as np
 import torch
 import torch.nn as nn
@@ -30,19 +22,19 @@ def train(epoch):
 
     start = time.time()
     net.train()
-    for batch_index, (images, labels) in enumerate(cifar100_training_loader):
+    for batch_index, (images, labels) in enumerate(tqdm(training_loader, desc = 'Training Epoch {epoch}')):
 
         if args.gpu:
             labels = labels.cuda()
             images = images.cuda()
-
+        
         optimizer.zero_grad()
         outputs = net(images)
         loss = loss_function(outputs, labels)
         loss.backward()
         optimizer.step()
 
-        n_iter = (epoch - 1) * len(cifar100_training_loader) + batch_index + 1
+        n_iter = (epoch - 1) * len(training_loader) + batch_index + 1
 
         last_layer = list(net.children())[-1]
         for name, para in last_layer.named_parameters():
@@ -56,7 +48,7 @@ def train(epoch):
             optimizer.param_groups[0]['lr'],
             epoch=epoch,
             trained_samples=batch_index * args.b + len(images),
-            total_samples=len(cifar100_training_loader.dataset)
+            total_samples=len(training_loader.dataset)
         ))
 
         #update training loss for each iteration
@@ -74,6 +66,7 @@ def train(epoch):
 
     print('epoch {} training time consumed: {:.2f}s'.format(epoch, finish - start))
 
+
 @torch.no_grad()
 def eval_training(epoch=0, tb=True):
 
@@ -83,7 +76,7 @@ def eval_training(epoch=0, tb=True):
     test_loss = 0.0 # cost function error
     correct = 0.0
 
-    for (images, labels) in cifar100_test_loader:
+    for (images, labels) in tqdm(test_loader, desc = f"Evaluating Epoch {epoch}"):
 
         if args.gpu:
             images = images.cuda()
@@ -103,18 +96,17 @@ def eval_training(epoch=0, tb=True):
     print('Evaluating Network.....')
     print('Test set: Epoch: {}, Average loss: {:.4f}, Accuracy: {:.4f}, Time consumed:{:.2f}s'.format(
         epoch,
-        test_loss / len(cifar100_test_loader.dataset),
-        correct.float() / len(cifar100_test_loader.dataset),
+        test_loss / len(test_loader.dataset),
+        correct.float() / len(test_loader.dataset),
         finish - start
     ))
-    print()
 
     #add informations to tensorboard
     if tb:
-        writer.add_scalar('Test/Average loss', test_loss / len(cifar100_test_loader.dataset), epoch)
-        writer.add_scalar('Test/Accuracy', correct.float() / len(cifar100_test_loader.dataset), epoch)
+        writer.add_scalar('Test/Average loss', test_loss / len(test_loader.dataset), epoch)
+        writer.add_scalar('Test/Accuracy', correct.float() / len(test_loader.dataset), epoch)
 
-    return correct.float() / len(cifar100_test_loader.dataset)
+    return correct.float() / len(test_loader.dataset)
 
 if __name__ == '__main__':
 
@@ -130,26 +122,24 @@ if __name__ == '__main__':
     net = get_network(args)
 
     #data preprocessing:
-    cifar100_training_loader = get_training_dataloader(
-        settings.CIFAR100_TRAIN_MEAN,
-        settings.CIFAR100_TRAIN_STD,
+    training_loader = get_training_dataloader(
+        root_dir = './chinese_char/952_train', 
         num_workers=4,
         batch_size=args.b,
         shuffle=True
     )
 
-    cifar100_test_loader = get_test_dataloader(
-        settings.CIFAR100_TRAIN_MEAN,
-        settings.CIFAR100_TRAIN_STD,
+    test_loader = get_test_dataloader(
+        root_dir = './chinese_char/952_test', 
         num_workers=4,
         batch_size=args.b,
-        shuffle=True
+        shuffle=False 
     )
 
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
     train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=settings.MILESTONES, gamma=0.2) #learning rate decay
-    iter_per_epoch = len(cifar100_training_loader)
+    iter_per_epoch = len(training_loader)
     warmup_scheduler = WarmUpLR(optimizer, iter_per_epoch * args.warm)
 
     if args.resume:
@@ -170,6 +160,7 @@ if __name__ == '__main__':
     #so the only way is to create a new tensorboard log
     writer = SummaryWriter(log_dir=os.path.join(
             settings.LOG_DIR, args.net, settings.TIME_NOW))
+    
     input_tensor = torch.Tensor(1, 3, 32, 32)
     if args.gpu:
         input_tensor = input_tensor.cuda()

@@ -1,13 +1,3 @@
-#test.py
-#!/usr/bin/env python3
-
-""" test neuron network performace
-print top1 and top5 err on test dataset
-of a model
-
-author baiyu
-"""
-
 import argparse
 
 from matplotlib import pyplot as plt
@@ -15,7 +5,7 @@ from matplotlib import pyplot as plt
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-
+from tqdm import tqdm
 from conf import settings
 from utils import get_network, get_test_dataloader
 
@@ -30,12 +20,11 @@ if __name__ == '__main__':
 
     net = get_network(args)
 
-    cifar100_test_loader = get_test_dataloader(
-        settings.CIFAR100_TRAIN_MEAN,
-        settings.CIFAR100_TRAIN_STD,
-        #settings.CIFAR100_PATH,
-        num_workers=4,
+    test_loader = get_test_dataloader(
+        root_dir='./chinese_char/952_test',
         batch_size=args.b,
+        num_workers=4,
+        shuffle=False
     )
 
     net.load_state_dict(torch.load(args.weights))
@@ -47,8 +36,8 @@ if __name__ == '__main__':
     total = 0
 
     with torch.no_grad():
-        for n_iter, (image, label) in enumerate(cifar100_test_loader):
-            print("iteration: {}\ttotal {} iterations".format(n_iter + 1, len(cifar100_test_loader)))
+        for n_iter, (image, label) in enumerate(tqdm(test_loader, desc = "Testing")):
+            print("iteration: {}\ttotal {} iterations".format(n_iter + 1, len(test_loader)))
 
             if args.gpu:
                 image = image.cuda()
@@ -74,6 +63,10 @@ if __name__ == '__main__':
         print(torch.cuda.memory_summary(), end='')
 
     print()
-    print("Top 1 err: ", 1 - correct_1 / len(cifar100_test_loader.dataset))
-    print("Top 5 err: ", 1 - correct_5 / len(cifar100_test_loader.dataset))
+    print("Top 1 err: ", 1 - correct_1 / len(test_loader.dataset))
+    print("Top 5 err: ", 1 - correct_5 / len(test_loader.dataset))
     print("Parameter numbers: {}".format(sum(p.numel() for p in net.parameters())))
+
+    # Print baseline accuracy
+    baseline_acc = correct_1 / len(test_loader.dataset)
+    print("Baseline Accuracy: ", baseline_acc.item())
