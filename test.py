@@ -1,13 +1,14 @@
 import argparse
-
-from matplotlib import pyplot as plt
-
+#from matplotlib import pyplot as plt
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from conf import settings
 from utils import get_network, get_test_dataloader
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 
 if __name__ == '__main__':
 
@@ -21,7 +22,7 @@ if __name__ == '__main__':
     net = get_network(args)
 
     test_loader = get_test_dataloader(
-        root_dir='./chinese_char/952_test',
+        root_dir='data/chinese_char/952_test',
         batch_size=args.b,
         num_workers=4,
         shuffle=False
@@ -40,8 +41,8 @@ if __name__ == '__main__':
             print("iteration: {}\ttotal {} iterations".format(n_iter + 1, len(test_loader)))
 
             if args.gpu:
-                image = image.cuda()
-                label = label.cuda()
+                image = image.to(device)
+                label = label.to(device)
                 print('GPU INFO.....')
                 print(torch.cuda.memory_summary(), end='')
 
