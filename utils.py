@@ -1,20 +1,16 @@
-""" helper function
-
-author baiyu
-"""
 import os
 import sys
 import re
 import datetime
-
 import numpy
-
 import torch
 from torch.optim.lr_scheduler import _LRScheduler
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from dataset import ChineseDataset
+
+
 
 def get_network(args):
     """ return given network
@@ -176,12 +172,14 @@ def get_training_dataloader(root_dir,  batch_size=128, num_workers=2, shuffle=Tr
     """
 
     transform_train = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.RandomCrop(32, padding=4),
+        #transforms.ToPILImage(),
+        transforms.Grayscale(num_output_channels=1),
+        transforms.Resize((64, 64)),
+        #transforms.RandomCrop(64, padding=4),
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(15),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, ), (0.5,)), 
+        transforms.Normalize((0.5), (0.5)), 
         
     ])
     #cifar100_training = CIFAR100Train(path, transform=transform_train)
@@ -205,10 +203,9 @@ def get_test_dataloader(root_dir,  batch_size=128, num_workers=2, shuffle=False)
     """
 
     transform_test = transforms.Compose([
-        transforms.ToPILImage(), 
+        #transforms.ToPILImage(), 
         transforms.ToTensor(),
-        #transforms.ConvertImageDtype(torch.float32),
-        transforms.Normalize((0.5,), (0.5,)), 
+        transforms.Normalize((0.5), (0.5)), 
     ])
     #cifar100_test = CIFAR100Test(path, transform=transform_test)
     test_dataset = ChineseDataset(root_dir=root_dir, transform=transform_test)

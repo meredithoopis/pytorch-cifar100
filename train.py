@@ -10,13 +10,24 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
-
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
 from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader, WarmUpLR, \
     most_recent_folder, most_recent_weights, last_epoch, best_acc_weights
+
+print("CUDA available:", torch.cuda.is_available())
+print("cuDNN version:", torch.backends.cudnn.version())
+print("cuDNN enabled:", torch.backends.cudnn.enabled)
+
+if not torch.backends.cudnn.is_available():
+    raise RuntimeError("cuDNN is not available. Ensure cuDNN is installed correctly.")
+
+if torch.cuda.is_available():
+    torch.backends.cudnn.benchmark = True  # Enable cuDNN auto-tuner for better performance
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 
 def train(epoch):
 
@@ -24,9 +35,10 @@ def train(epoch):
     net.train()
     for batch_index, (images, labels) in enumerate(tqdm(training_loader, desc = 'Training Epoch {epoch}')):
 
-        if args.gpu:
-            labels = labels.cuda()
-            images = images.cuda()
+        #if args.gpu:
+         #   labels = labels.cuda()
+         #   images = images.cuda()
+        images, labels = images.to(device), labels.to(device)
         
         optimizer.zero_grad()
         outputs = net(images)
@@ -78,9 +90,10 @@ def eval_training(epoch=0, tb=True):
 
     for (images, labels) in tqdm(test_loader, desc = f"Evaluating Epoch {epoch}"):
 
-        if args.gpu:
-            images = images.cuda()
-            labels = labels.cuda()
+        #if args.gpu: 
+         #   images = images.cuda()
+         #   labels = labels.cuda()
+        images, labels = images.to(device), labels.to(device)
 
         outputs = net(images)
         loss = loss_function(outputs, labels)
@@ -119,24 +132,25 @@ if __name__ == '__main__':
     parser.add_argument('-resume', action='store_true', default=False, help='resume training')
     args = parser.parse_args()
 
-    net = get_network(args)
+    net = get_network(args).to(device)
+    print(f"Number of parameters: {sum(p.numel() for p in net.parameters())}")
 
     #data preprocessing:
     training_loader = get_training_dataloader(
-        root_dir = './chinese_char/952_train', 
+        root_dir = 'data/chinese_char/952_train', 
         num_workers=4,
         batch_size=args.b,
         shuffle=True
     )
 
     test_loader = get_test_dataloader(
-        root_dir = './chinese_char/952_test', 
+        root_dir = 'data/chinese_char/952_test', 
         num_workers=4,
         batch_size=args.b,
         shuffle=False 
     )
 
-    loss_function = nn.CrossEntropyLoss()
+    loss_function = nn.CrossEntropyLoss().to(device)
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
     train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=settings.MILESTONES, gamma=0.2) #learning rate decay
     iter_per_epoch = len(training_loader)
@@ -161,7 +175,7 @@ if __name__ == '__main__':
     writer = SummaryWriter(log_dir=os.path.join(
             settings.LOG_DIR, args.net, settings.TIME_NOW))
     
-    input_tensor = torch.Tensor(1, 3, 32, 32)
+    input_tensor = torch.Tensor(1, 1, 64, 64).to(device)
     if args.gpu:
         input_tensor = input_tensor.cuda()
     writer.add_graph(net, input_tensor)
