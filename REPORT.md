@@ -45,4 +45,4 @@ python train.py -net vgg19depthwise
 
 
 ## Additional details: 
-All models can be found on this link: [Models](https://drive.google.com/drive/u/0/folders1POlhdIlJTAnJR3HOjLbakfmV6Xhea8mB)
+All models can be found on this link: [Models](https://drive.google.com/drive/folders/1POlhdIlJTAnJR3HOjLbakfmV6Xhea8mB?usp=drive_link)
