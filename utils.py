@@ -28,6 +28,9 @@ def get_network(args):
     elif args.net == 'vgg19':
         from models.vgg import vgg19_bn
         net = vgg19_bn()
+    elif args.net == 'vgg19depthwise': 
+        from models.depthwisevgg import vgg19_bn 
+        net = vgg19_bn()
     elif args.net == 'densenet121':
         from models.densenet import densenet121
         net = densenet121()
