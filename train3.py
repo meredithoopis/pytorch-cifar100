@@ -15,6 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader, WarmUpLR, \
     most_recent_folder, most_recent_weights, last_epoch, best_acc_weights
+from editdistance import eval
 
 print("CUDA available:", torch.cuda.is_available())
 print("cuDNN version:", torch.backends.cudnn.version())
@@ -81,45 +82,53 @@ def train(epoch):
 
 @torch.no_grad()
 def eval_training(epoch=0, tb=True):
-
     start = time.time()
     net.eval()
 
-    test_loss = 0.0 # cost function error
+    test_loss = 0.0  # cost function error
     correct = 0.0
+    total_levenshtein_distance = 0.0
+    total_length = 0.0
 
-    for (images, labels) in tqdm(test_loader, desc = f"Evaluating Epoch {epoch}"):
-
-        #if args.gpu: 
-         #   images = images.cuda()
-         #   labels = labels.cuda()
+    for (images, labels) in tqdm(test_loader, desc=f"Evaluating Epoch {epoch}"):
         images, labels = images.to(device), labels.to(device)
 
         outputs = net(images)
         loss = loss_function(outputs, labels)
-
         test_loss += loss.item()
+
         _, preds = outputs.max(1)
+        pred_labels = map_labels_to_cangjie(preds)
+        true_labels = map_labels_to_cangjie(labels)
+
+        for pred_label, true_label in zip(pred_labels, true_labels):
+            total_levenshtein_distance += levenshtein_distance(pred_label, true_label)
+            total_length += len(true_label)
+
         correct += preds.eq(labels).sum()
 
     finish = time.time()
     if args.gpu:
         print('GPU INFO.....')
         print(torch.cuda.memory_summary(), end='')
+
+    avg_levenshtein_distance = total_levenshtein_distance / total_length
+    accuracy = 1 - avg_levenshtein_distance
+
     print('Evaluating Network.....')
     print('Test set: Epoch: {}, Average loss: {:.4f}, Accuracy: {:.4f}, Time consumed:{:.2f}s'.format(
         epoch,
         test_loss / len(test_loader.dataset),
-        correct.float() / len(test_loader.dataset),
+        accuracy,
         finish - start
     ))
 
-    #add informations to tensorboard
     if tb:
         writer.add_scalar('Test/Average loss', test_loss / len(test_loader.dataset), epoch)
-        writer.add_scalar('Test/Accuracy', correct.float() / len(test_loader.dataset), epoch)
+        writer.add_scalar('Test/Accuracy', accuracy, epoch)
 
-    return correct.float() / len(test_loader.dataset)
+    return accuracy
+
 
 if __name__ == '__main__':
 

@@ -66,7 +66,7 @@ if __name__ == '__main__':
     print()
     print("Top 1 err: ", 1 - correct_1 / len(test_loader.dataset))
     print("Top 5 err: ", 1 - correct_5 / len(test_loader.dataset))
-    print("Parameter numbers: {}".format(sum(p.numel() for p in net.parameters())))
+    #print("Parameter numbers: {}".format(sum(p.numel() for p in net.parameters())))
 
     # Print baseline accuracy
     baseline_acc = correct_1 / len(test_loader.dataset)
