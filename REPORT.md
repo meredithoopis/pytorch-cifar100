@@ -29,9 +29,17 @@ python train.py -net vgg19depthwise
 | Baseline              | 0.19%       | 0.03%       | 18.11        | 98.8%        | 196.5           |
 | Quantization (float16)| 0.19%       | 0.03%       | 16.23        | 98.8%        | 196.5           |
 | Quantization (int8)   | 0.19%       | 0.03%       | 16.17        | 98.0%        | 109.3           |
+| Depthwise Convolution | 0.21%       | 0.01%       | 13.05        | 99.1%        | 125.6           |
 
-| Depthwise Convolution | 0.23%       | 0.02%       | 40.00        | 99.1%        | 90.0            |
+- Analysis: 
+    - Baseline: Highest runtime (18.11 ms) and largest model size (196.5 MB).
+    - Quantization (float16): Maintains baseline accuracy with a slight runtime improvement (16.23 ms).
+    - Quantization (int8): Reduces model size (109.3 MB) and runtime (16.17 ms) but slightly decreases accuracy (98.0%).
+    - Depthwise Convolution: Best accuracy (99.1%) and fastest runtime (13.05 ms) with moderate model size (125.6 MB).
 
+- Conclusion:
+    - Quantization (int8): Best for size and speed with minor accuracy trade-off.
+    - Depthwise Convolution: Best overall performance with highest accuracy and fastest runtime.
 
 ## 3. Challenge 3: 
 
