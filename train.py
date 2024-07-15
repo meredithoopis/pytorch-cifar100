@@ -137,14 +137,14 @@ if __name__ == '__main__':
 
     #data preprocessing:
     training_loader = get_training_dataloader(
-        root_dir = 'data/chinese_char/952_train', 
+        root_dir = 'chinese-char/etl_952_singlechar_size_64/952_train', 
         num_workers=4,
         batch_size=args.b,
         shuffle=True
     )
 
     test_loader = get_test_dataloader(
-        root_dir = 'data/chinese_char/952_test', 
+        root_dir = 'chinese-char/etl_952_singlechar_size_64/952_test', 
         num_workers=4,
         batch_size=args.b,
         shuffle=False 

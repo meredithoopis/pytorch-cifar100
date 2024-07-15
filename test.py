@@ -22,7 +22,7 @@ if __name__ == '__main__':
     net = get_network(args)
 
     test_loader = get_test_dataloader(
-        root_dir='data/chinese_char/952_test',
+        root_dir='chinese-char/etl_952_singlechar_size_64/952_test',
         batch_size=args.b,
         num_workers=4,
         shuffle=False

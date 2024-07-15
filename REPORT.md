@@ -42,7 +42,12 @@ python train.py -net vgg19depthwise
     - Depthwise Convolution: Best overall performance with highest accuracy and fastest runtime.
 
 ## 3. Challenge 3: 
-
+- I didn't change the architecture of the model, instead I defined a mapping from label to corrsponding Canjie character. 
+For inference with the depthwise convolution model, run: 
+```bash
+python inference.py -net vgg19depthwise -weights one_of_the_weights_file 
+```
+- The training and testing file can be found on: train.py file and test.py file 
 
 ## Additional details: 
 All models can be found on this link: [Models](https://drive.google.com/drive/folders/1POlhdIlJTAnJR3HOjLbakfmV6Xhea8mB?usp=drive_link)

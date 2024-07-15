@@ -24,7 +24,7 @@ def read_cangjie_mapping(file_path):
             cangjie_mapping[label] = (cangjie_code, character)
     return cangjie_mapping
 
-mappings = read_cangjie_mapping('952_labels.txt')
+mappings = read_cangjie_mapping('chinese-char/etl_952_singlechar_size_64/952_labels.txt')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -34,16 +34,16 @@ if __name__ == '__main__':
     parser.add_argument('-b', type=int, default=16, help='batch size for dataloader')
     args = parser.parse_args()
 
-    net = get_network(args)
+    net = get_network(args).to(device)
 
     test_loader = get_test_dataloader(
-        root_dir='pytorch-cifar100/data/etl_952_singlechar_size_64/952_test',
+        root_dir='chinese-char/etl_952_singlechar_size_64/952_test',
         batch_size=args.b,
         num_workers=4,
         shuffle=False
     )
 
-    net.load_state_dict(torch.load(args.weights, map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load(args.weights, map_location=device))
     print(net)
     net.eval()
 
@@ -67,11 +67,19 @@ if __name__ == '__main__':
             _, preds = outputs.max(1)
 
             for pred, label in zip(preds, labels):
-                pred_code = mappings[pred.item()][0]
-                label_code = mappings[label.item()][0]
-                levenshtein_distance_value = levenshtein_distance(pred_code, label_code)
+                pred_code = mappings.get(pred.item())
+                label_code = mappings.get(label.item())
+
+                if pred_code is None or label_code is None:
+                    print(f"Mapping missing for pred: {pred.item()} or label: {label.item()}")
+                    continue
+
+                levenshtein_distance_value = levenshtein_distance(pred_code[0], label_code[0])
                 total_levenshtein_distance += levenshtein_distance_value
-                total_length += len(label_code) if label_code != 'zc' else 1
+                total_length += len(label_code[0]) if label_code[0] != 'zc' else 1
+
+                if batch_idx == 0 and pred.item() == 0:
+                    print(f"Sample - pred: {pred.item()}, label: {label.item()}, pred_code: {pred_code}, label_code: {label_code}")
 
     if total_length == 0:
         print("No data processed. Please check the data loader and ensure there are valid samples in the dataset.")
@@ -94,4 +102,13 @@ if __name__ == '__main__':
 
     print("Levenshtein Distance: ", avg_levenshtein_distance if total_length != 0 else "N/A")
     print("Accuracy: ", accuracy if total_length != 0 else "N/A")
-    print("Parameter numbers: {}".format(sum(p.numel() for p in net.parameters())))
+
+
+ 
+
+ 
+
+
+
+
+
