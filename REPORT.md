@@ -24,7 +24,7 @@ python train.py -net vgg19depthwise
 
 - Results: 
 
-| Method                | Top-1 Error | Top-5 Error | Runtime (ms) | Accuracy (%) | Model Size (MB) |
+| Method                | Top-1 Error | Top-5 Error | Runtime per image (ms) | Accuracy (%) | Model Size (MB) |
 |-----------------------|-------------|-------------|--------------|--------------|-----------------|
 | Baseline              | 0.19%       | 0.03%       | 18.11        | 98.8%        | 196.5           |
 | Quantization (float16)| 0.19%       | 0.03%       | 16.23        | 98.8%        | 196.5           |
