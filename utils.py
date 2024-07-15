@@ -161,7 +161,6 @@ def get_network(args):
 
     return net
 
-
 def get_training_dataloader(root_dir,  batch_size=128, num_workers=2, shuffle=True):
     """ return training dataloader
     Args:
@@ -175,19 +174,14 @@ def get_training_dataloader(root_dir,  batch_size=128, num_workers=2, shuffle=Tr
     """
 
     transform_train = transforms.Compose([
-        #transforms.ToPILImage(),
         transforms.Grayscale(num_output_channels=1),
         transforms.Resize((64, 64)),
-        #transforms.RandomCrop(64, padding=4),
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(15),
         transforms.ToTensor(),
         transforms.Normalize((0.5), (0.5)), 
         
     ])
-    #cifar100_training = CIFAR100Train(path, transform=transform_train)
-    #cifar100_training = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
-    #cifar100_training_loader = DataLoader(cifar100_training, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size)
 
     trainset = ChineseDataset(root_dir=root_dir, transform=transform_train)
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)

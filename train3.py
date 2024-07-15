@@ -30,6 +30,21 @@ if torch.cuda.is_available():
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
+def read_cangjie_mapping(file_path):
+    cangjie_mapping = {}
+    with open(file_path, 'r', encoding='utf-8') as f:
+        next(f)  # Skip the header row
+        for line in f:
+            parts = line.strip().split()
+            character = parts[1]
+            label = int(parts[0])
+            cangjie_code = parts[-1]
+            cangjie_mapping[label] = (cangjie_code, character)
+    return cangjie_mapping
+
+mappings = read_cangjie_mapping('pytorch-cifar100/data/etl_952_singlechar_size_64/952_labels.txt')
+
+
 def train(epoch):
 
     start = time.time()
@@ -93,27 +108,28 @@ def eval_training(epoch=0, tb=True):
     for (images, labels) in tqdm(test_loader, desc=f"Evaluating Epoch {epoch}"):
         images, labels = images.to(device), labels.to(device)
 
-        outputs = net(images)
+        outputs = net(images) #label     
         loss = loss_function(outputs, labels)
         test_loss += loss.item()
-
         _, preds = outputs.max(1)
-        pred_labels = map_labels_to_cangjie(preds)
-        true_labels = map_labels_to_cangjie(labels)
+        correct += preds.eq(labels).sum().item()
+        
+        for pred, label in zip(preds, labels):
+            pred_code = mappings[pred.item()][0]
+            label_code = mappings[label.item()][0]
+            levenshtein_distance = eval(pred_code, label_code)
+            total_levenshtein_distance += levenshtein_distance
+            total_length += len(label_code) if label_code != 'zc' else 1
 
-        for pred_label, true_label in zip(pred_labels, true_labels):
-            total_levenshtein_distance += levenshtein_distance(pred_label, true_label)
-            total_length += len(true_label)
+    avg_levenshtein_distance = total_levenshtein_distance / total_length
+    accuracy = 1 - avg_levenshtein_distance
 
-        correct += preds.eq(labels).sum()
 
     finish = time.time()
     if args.gpu:
         print('GPU INFO.....')
         print(torch.cuda.memory_summary(), end='')
 
-    avg_levenshtein_distance = total_levenshtein_distance / total_length
-    accuracy = 1 - avg_levenshtein_distance
 
     print('Evaluating Network.....')
     print('Test set: Epoch: {}, Average loss: {:.4f}, Accuracy: {:.4f}, Time consumed:{:.2f}s'.format(
